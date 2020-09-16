@@ -1,7 +1,7 @@
 class Api::V1::EventsController < ApplicationController
   def index
-    events = Event.all
-    render json: events
+    events = Event.paginate(page: params[:page])
+    render json: events, meta: pagination(events)
   end
 
   def show

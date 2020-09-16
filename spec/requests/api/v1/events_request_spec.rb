@@ -21,6 +21,13 @@ RSpec.describe "Api::V1::Events", type: :request do
       expect(json_response).to be_a(Array)
       expect(json_response.size).to eq events_list.size
     end
+
+    it 'response contains event list' do
+      meta_data = JSON.parse(response.body)['meta']
+      expect(meta_data['current-page']).to eq 1
+      expect(meta_data['total-pages']).to eq 1
+      expect(meta_data['total-count']).to eq events_list.size
+    end
   end
 
   describe 'GET #show' do
