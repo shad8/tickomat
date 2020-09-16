@@ -17,10 +17,9 @@ RSpec.describe "Api::V1::Events", type: :request do
     end
 
     it 'response contains event list' do
-      json_response = JSON.parse(response.body)['events']
+      json_response = JSON.parse(response.body)['data']
       expect(json_response).to be_a(Array)
       expect(json_response.size).to eq events_list.size
-      expect(json_response.flat_map { |i| i.keys }.uniq).to match_array %w(id started_at)
     end
   end
 
@@ -36,9 +35,9 @@ RSpec.describe "Api::V1::Events", type: :request do
     end
 
     it 'response contains event list' do
-      json_response = JSON.parse(response.body)['event']
-      expect(json_response['id']).to eq event.id
-      expect(json_response.keys).to match_array %w(id started_at)
+      json_response = JSON.parse(response.body)['data']
+      expect(json_response['id'].to_i).to eq event.id
+      expect(json_response['attributes'].keys).to match_array %w(started-at)
     end
   end
 end
