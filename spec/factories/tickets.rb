@@ -1,8 +1,8 @@
 FactoryBot.define do
   factory :ticket do
-    selling_option { "MyString" }
+    selling_option { nil }
     quantity { 1 }
     price { "9.99" }
-    event { nil }
+    event { Event.first || association(:event) }
   end
 end
