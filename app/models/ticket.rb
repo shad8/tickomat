@@ -7,5 +7,9 @@ class Ticket < ApplicationRecord
     selling_option_avoid_one: 'selling_option_avoid_one'
   }
 
-  validates_numericality_of :quantity, :price, { greater_than: 0 }
+  validates_numericality_of :quantity, { greater_than: 0 }
+
+  def include_gift_package?
+    false
+  end
 end
