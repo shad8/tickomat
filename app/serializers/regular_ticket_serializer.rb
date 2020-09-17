@@ -1,0 +1,2 @@
+class RegularTicketSerializer < TicketSerializer
+end

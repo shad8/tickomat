@@ -1,0 +1,2 @@
+class VipTicketSerializer < TicketSerializer
+end

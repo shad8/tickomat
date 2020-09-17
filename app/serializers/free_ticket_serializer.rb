@@ -1,0 +1,2 @@
+class FreeTicketSerializer < TicketSerializer
+end

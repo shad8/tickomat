@@ -6,6 +6,7 @@ FactoryBot.define do
     event { Event.first || association(:event) }
 
     factory :free_ticket, class: FreeTicket do
+      price { "0.00" }
     end
 
     factory :regular_ticket, class: RegularTicket do
