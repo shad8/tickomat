@@ -32,44 +32,66 @@ RSpec.describe "Api::V1::Events", type: :request do
 
   describe 'GET #show' do
     let(:event_attributes) do
-      %w(started-at available-ticket-quantity all-ticket-quantity)
+      %w(started-at available-ticket-quantity all-ticket-quantity ticket-sales-open)
     end
 
     let(:ticket_attributes) do
       %w(price all-ticket-quantity available-ticket-quantity selling-option)
     end
 
-    let!(:event) { FactoryBot.create(:event) }
+    let!(:event) { FactoryBot.create(:event, started_at: DateTime.current + 1.day) }
     let!(:free_ticket) { FactoryBot.create(:free_ticket, quantity: 20, event: event) }
     let!(:regular_ticket) { FactoryBot.create(:regular_ticket, quantity: 10, event: event) }
     let!(:vip_ticket) { FactoryBot.create(:vip_ticket, quantity: 5, event: event) }
 
-    before(:each) { get "/api/v1/events/#{event.id}" }
+    let!(:event_2) { FactoryBot.create(:event, started_at: DateTime.current - 1.day) }
+    let!(:regular_ticket_2) { FactoryBot.create(:regular_ticket, quantity: 10, event: event_2) }
 
     it 'returns http success' do
+      get "/api/v1/events/#{event.id}"
       expect(response).to have_http_status(:success)
     end
 
-    it 'response event' do
-      json_response = JSON.parse(response.body)['data']
-      expect(json_response['id'].to_i).to eq event.id
-      expect(json_response['attributes'].keys).to match_array event_attributes
-      expect(json_response['attributes']['all-ticket-quantity']).to eq 35
-      expect(json_response['attributes']['available-ticket-quantity']).to eq 35
-    end
+    context 'when event has available tickets' do
+      context 'when event not start yet' do
+        before(:each) { get "/api/v1/events/#{event.id}" }
 
-    {
-      'free-ticket' => { quantity: 20, available: 20 },
-      'regular-ticket'=> { quantity: 10, available: 10 },
-      'vip-ticket' => {quantity: 5, available: 5 },
-    }.each do |ticket_name, ticket_data|
-      it "include information about #{ticket_name}" do
-        json_response = JSON.parse(response.body)['included']
-        ticket = json_response.detect { |t| t['type'] == "#{ticket_name}s" }
+        it 'response event with available tickets selling' do
+          json_response = JSON.parse(response.body)['data']
+          expect(json_response['id'].to_i).to eq event.id
+          expect(json_response['attributes'].keys).to match_array event_attributes
+          expect(json_response['attributes']['all-ticket-quantity']).to eq 35
+          expect(json_response['attributes']['available-ticket-quantity']).to eq 35
+          expect(json_response['attributes']['ticket-sales-open']).to be_truthy
+        end
 
-        expect(ticket['attributes'].keys).to match_array ticket_attributes
-        expect(ticket['attributes']['all-ticket-quantity']).to eq ticket_data[:quantity]
-        expect(ticket['attributes']['available-ticket-quantity']).to eq ticket_data[:available]
+        {
+            'free-ticket' => { quantity: 20, available: 20 },
+            'regular-ticket'=> { quantity: 10, available: 10 },
+            'vip-ticket' => {quantity: 5, available: 5 },
+        }.each do |ticket_name, ticket_data|
+          it "include information about #{ticket_name}" do
+            json_response = JSON.parse(response.body)['included']
+            ticket = json_response.detect { |t| t['type'] == "#{ticket_name}s" }
+
+            expect(ticket['attributes'].keys).to match_array ticket_attributes
+            expect(ticket['attributes']['all-ticket-quantity']).to eq ticket_data[:quantity]
+            expect(ticket['attributes']['available-ticket-quantity']).to eq ticket_data[:available]
+          end
+        end
+      end
+
+      context 'when event start' do
+        before(:each) { get "/api/v1/events/#{event_2.id}" }
+
+        it 'response event with closed ticket sales' do
+          json_response = JSON.parse(response.body)['data']
+          expect(json_response['id'].to_i).to eq event_2.id
+          expect(json_response['attributes'].keys).to match_array event_attributes
+          expect(json_response['attributes']['all-ticket-quantity']).to eq 10
+          expect(json_response['attributes']['available-ticket-quantity']).to eq 10
+          expect(json_response['attributes']['ticket-sales-open']).to be_falsey
+        end
       end
     end
   end
