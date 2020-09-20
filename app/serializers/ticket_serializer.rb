@@ -4,6 +4,6 @@ class TicketSerializer < ActiveModel::Serializer
   attribute :available_ticket_quantity
 
   def available_ticket_quantity
-    object.quantity
+    object.quantity - object.sold_tickets.sum(&:quantity)
   end
 end

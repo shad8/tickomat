@@ -54,29 +54,64 @@ RSpec.describe "Api::V1::Events", type: :request do
 
     context 'when event has available tickets' do
       context 'when event not start yet' do
-        before(:each) { get "/api/v1/events/#{event.id}" }
+        subject do
+          get "/api/v1/events/#{event.id}"
+          JSON.parse(response.body)
+        end
 
         it 'response event with available tickets selling' do
-          json_response = JSON.parse(response.body)['data']
+          json_response = subject['data']
           expect(json_response['id'].to_i).to eq event.id
           expect(json_response['attributes'].keys).to match_array event_attributes
-          expect(json_response['attributes']['all-ticket-quantity']).to eq 35
-          expect(json_response['attributes']['available-ticket-quantity']).to eq 35
           expect(json_response['attributes']['ticket-sales-open']).to be_truthy
         end
 
-        {
+        context 'when no ticket has been sold'do
+          it 'event has correct information about ticket' do
+            expect(subject['data']['attributes']['all-ticket-quantity']).to eq 35
+            expect(subject['data']['attributes']['available-ticket-quantity']).to eq 35
+          end
+
+          {
             'free-ticket' => { quantity: 20, available: 20 },
             'regular-ticket'=> { quantity: 10, available: 10 },
             'vip-ticket' => {quantity: 5, available: 5 },
-        }.each do |ticket_name, ticket_data|
-          it "include information about #{ticket_name}" do
-            json_response = JSON.parse(response.body)['included']
-            ticket = json_response.detect { |t| t['type'] == "#{ticket_name}s" }
+          }.each do |ticket_name, ticket_data|
+            it "include information about #{ticket_name}" do
+              ticket = subject['included'].detect { |t| t['type'] == "#{ticket_name}s" }
 
-            expect(ticket['attributes'].keys).to match_array ticket_attributes
-            expect(ticket['attributes']['all-ticket-quantity']).to eq ticket_data[:quantity]
-            expect(ticket['attributes']['available-ticket-quantity']).to eq ticket_data[:available]
+              expect(ticket['attributes'].keys).to match_array ticket_attributes
+              expect(ticket['attributes']['all-ticket-quantity']).to eq ticket_data[:quantity]
+              expect(ticket['attributes']['available-ticket-quantity']).to eq ticket_data[:available]
+            end
+          end
+        end
+
+        context 'when some tickets have been sold'do
+          let!(:order) { FactoryBot.create(:order, event: event) }
+          let!(:sold_tickets) do
+            FactoryBot.create(:sold_ticket, quantity: 20, order: order, ticket: free_ticket)
+            FactoryBot.create(:sold_ticket, quantity: 5, order: order, ticket: regular_ticket)
+          end
+
+          it 'event has correct information about ticket' do
+            get "/api/v1/events/#{event.id}"
+            expect(subject['data']['attributes']['all-ticket-quantity']).to eq 35
+            expect(subject['data']['attributes']['available-ticket-quantity']).to eq 10
+          end
+
+          {
+            'free-ticket' => { quantity: 20, available: 0 },
+            'regular-ticket'=> { quantity: 10, available: 5 },
+            'vip-ticket' => {quantity: 5, available: 5 },
+          }.each do |ticket_name, ticket_data|
+            it "include information about #{ticket_name}" do
+              ticket = subject['included'].detect { |t| t['type'] == "#{ticket_name}s" }
+
+              expect(ticket['attributes'].keys).to match_array ticket_attributes
+              expect(ticket['attributes']['all-ticket-quantity']).to eq ticket_data[:quantity]
+              expect(ticket['attributes']['available-ticket-quantity']).to eq ticket_data[:available]
+            end
           end
         end
       end

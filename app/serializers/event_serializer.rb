@@ -7,11 +7,11 @@ class EventSerializer < ActiveModel::Serializer
   has_many :tickets, serializer: TicketSerializer
 
   def all_ticket_quantity
-    object.tickets.sum(:quantity)
+    object.all_ticket_quantity
   end
 
   def available_ticket_quantity
-    object.tickets.sum(:quantity)
+    object.all_ticket_quantity - object.sold_ticket_quantity
   end
 
   def ticket_sales_open

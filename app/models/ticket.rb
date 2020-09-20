@@ -1,5 +1,6 @@
 class Ticket < ApplicationRecord
   belongs_to :event
+  has_many :sold_tickets
 
   enum selling_option: {
     selling_option_even: 'selling_option_even',
