@@ -36,7 +36,7 @@ RSpec.describe "Api::V1::Events", type: :request do
     end
 
     let(:ticket_attributes) do
-      %w(price all-ticket-quantity available-ticket-quantity)
+      %w(price all-ticket-quantity available-ticket-quantity selling-option)
     end
 
     let!(:event) { FactoryBot.create(:event) }
